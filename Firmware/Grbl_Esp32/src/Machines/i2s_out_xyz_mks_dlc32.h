@@ -94,10 +94,8 @@
 #define Y_LIMIT_PIN                 GPIO_NUM_35
 
 #if defined(USR_Z_MOTOR)
-//#define Z_LIMIT_PIN                 GPIO_NUM_34
+#define Z_LIMIT_PIN                 GPIO_NUM_34
 #endif
-
-#define TRIGGER_SD_PIN              GPIO_NUM_34
 
 #ifdef USE_BOARD_V2_0
 #define PROBE_PIN                   GPIO_NUM_22    
