@@ -33,7 +33,8 @@ void grbl_init() {
     disableCore1WDT();
 
     pinMode(LCD_EN, OUTPUT);
-    
+        // SCORRI FINO A QUI E AGGIUNGI QUESTA RIGA:
+    pinMode(TRIGGER_SD_PIN, INPUT_PULLUP);
     LCD_BLK_OFF;
     
 #ifdef USE_I2S_OUT
