@@ -18,3 +18,4 @@ Note:We will make a pin suitable for V1.0，Settings corresponding to the select
 Then compile and download.
 
 <img width="768" height="1365" alt="Gemini_Generated_Image_7x95qj7x95qj7x95" src="https://github.com/user-attachments/assets/ed314566-1696-43f5-b4c6-d649a3ba32fd" />
+<img width="1024" height="569" alt="image" src="https://github.com/user-attachments/assets/d522aac6-2d0f-4cb2-a007-16c4c2de6e0c" />
