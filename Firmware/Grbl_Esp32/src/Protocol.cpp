@@ -157,48 +157,43 @@ void protocol_main_loop() {
 
 
       
-       // --- INIZIO AVVIO AUTOMATICO AGGANCIATO ALLA FREQUENZA DEL REPORT IDLE ---
+        // --- AVVIO AUTOMATICO NON-BLOCCANTE (RISPOSTA IDLE) ---
         static bool file_already_started = false;
         static uint32_t last_idle_report_time = 0;
 
-        // Eseguiamo il controllo SOLO quando la macchina è in Idle, 
-        // non ha ancora avviato il file, E solo UNA VOLTA AL SECONDO (in concomitanza con la risposta di stato)
+        // Il controllo avviene una volta al secondo, solo in Idle e se il file non è già partito
         if (sys.state == State::Idle && !file_already_started && (millis() - last_idle_report_time >= 1000)) {
             #ifdef ENABLE_SD_CARD
-            last_idle_report_time = millis(); // Aggiorna il tempo per saltare i successivi cicli rapidi
+            last_idle_report_time = millis(); // Aggiorna il tempo istantaneamente
 
-            // Controlliamo se è presente il file costycnc.nc sulla SD
+            // Tentiamo di aprire il file sulla SD
             File testFile = SD.open("/costycnc.nc", "r");
             
             if (testFile) {
-                // Il file c'è! Lo chiudiamo subito per liberarlo
-                testFile.close();
+                testFile.close(); // Chiudiamo subito il file per liberare la memoria
                 
-                // Segnaliamo l'evento sul terminale insieme alla risposta Idle
                 grbl_send(CLIENT_ALL, "[MSG:Sistema in Idle. File costycnc.nc rilevato -> Avvio taglio...]\r\n");
                 
-                // Inviamo il comando ufficiale di riproduzione usando la macro nativa MKS
+                // Inietta il comando ufficiale di riproduzione nella coda nativa MKS
                 MKS_GRBL_CMD_SEND("$SD/Run=costycnc.nc\n");
                 
-                // Blocchiamo il controllo per evitare che il comando venga rinviato al ciclo successivo
-                file_already_started = true;
+                file_already_started = true; // Blocca i controlli successivi per evitare loop
             }
             #endif
         }
 
-        // Se la scheda SD viene rimossa (il file non si apre più), resettiamo il flag quando siamo in Idle
+        // Se rimuovi la SD, resetta il flag per permettere un futuro riavvio
         if (file_already_started && sys.state == State::Idle && (millis() - last_idle_report_time >= 2000)) {
             #ifdef ENABLE_SD_CARD
             File checkRemoved = SD.open("/costycnc.nc", "r");
             if (!checkRemoved) {
-                file_already_started = false; // SD rimossa, reset pronto per quando verrà reinserita
+                file_already_started = false; // SD estratta, sistema pronto per la prossima volta
             } else {
                 checkRemoved.close();
             }
             #endif
         }
-        // --- FINE AVVIO AUTOMATICO DA RISPOSTA IDLE ---
-
+        // --- FINE AVVIO AUTOMATICO ---
 
       
 #if 1
