@@ -162,17 +162,20 @@ void protocol_main_loop() {
         // Se il pin passa da HIGH a LOW (messo a massa) e la macchina è ferma in IDLE
         if (current_trigger_state == LOW && last_trigger_state == HIGH && sys.state == State::Idle) {
             #ifdef ENABLE_SD_CARD
-            // Controlla se la SD è montata o pronta
-            if (sd_mount()) { 
-                char my_file[] = "/costycnc.nc";
-                if (openFile(my_file)) {
+            // Sostituiamo sd_mount() con il controllo nativo sulla presenza della SD di Makerbase
+            if (SD_Control.sd_ready == true) { 
+                // Usiamo la sintassi esatta richiesta: passiamo SD come File System e il percorso del file
+                if (openFile(SD, "/costycnc.nc")) {
                     grbl_send(CLIENT_ALL, "[MSG:Pulsante EXP1 premuto: Avvio costycnc.nc]\r\n");
                 }
+            } else {
+                grbl_send(CLIENT_ALL, "[MSG:Errore: Scheda SD non inserita o non pronta!]\r\n");
             }
             #endif
         }
         last_trigger_state = current_trigger_state;
         // --- FINE MODIFICA ---
+
 
       
 #if 1
