@@ -94,8 +94,10 @@
 #define Y_LIMIT_PIN                 GPIO_NUM_35
 
 #if defined(USR_Z_MOTOR)
-#define Z_LIMIT_PIN                 GPIO_NUM_34
+//#define Z_LIMIT_PIN                 GPIO_NUM_34
 #endif
+
+#define TRIGGER_SD_PIN              GPIO_NUM_34
 
 #ifdef USE_BOARD_V2_0
 #define PROBE_PIN                   GPIO_NUM_22    
@@ -109,10 +111,7 @@
 #define LCD_RS					    GPIO_NUM_33
 #define LCD_EN					    GPIO_NUM_5     
 #define LCD_RST					    GPIO_NUM_27     
-// Commentiamo la vecchia definizione dell'LCD per liberare il pin 25
-// #define LCD_CS					    GPIO_NUM_25
-// Definiamo il pin per il pulsante sul GPIO 25
-#define TRIGGER_SD_PIN        GPIO_NUM_25
+#define LCD_CS					    GPIO_NUM_25
 
 #define TOUCH_CS				    GPIO_NUM_26
 #define BEEPER					    I2SO(7)
