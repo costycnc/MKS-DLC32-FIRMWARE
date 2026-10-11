@@ -155,7 +155,7 @@ void protocol_main_loop() {
     bool is_need_next = false;
     for (;;) {
 
-        // --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD (MESSAGGIO WEB) ---
+            // --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD (MESSAGGIO WEB) ---
         static bool last_sd_inserted = false;
         static uint32_t sd_timer = 0;
         static bool timer_active = false;
@@ -183,13 +183,12 @@ void protocol_main_loop() {
             // Creiamo il comando identico a quello che manderesti dalla WebUI
             char web_command[] = "$SD/Run=costycnc.nc";
             
-            // Eseguiamo il comando simulando l'ingresso seriale/web principale
-            execute_line(web_command, CLIENT_SERIAL, WebUI::AuthenticationLevel::ADMIN);
+            // Eseguiamo il comando passando solo la riga e il client seriale standard
+            execute_line(web_command, CLIENT_SERIAL);
             #endif
         }
         last_sd_inserted = current_sd_inserted;
         // --- FINE AVVIO AUTOMATICO DA INSERIMENTO SD ---
-
 
 
       
