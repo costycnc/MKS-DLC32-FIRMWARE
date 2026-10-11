@@ -154,58 +154,50 @@ void protocol_main_loop() {
     int c;
     bool is_need_next = false;
     for (;;) {
-        // --- INIZIO AVVIO AUTOMATICO (STRATEGIA FLUIDNC REALE) ---
-        static bool file_already_checked = false;
-        static uint32_t sd_stable_timer = 0;
-        static bool timer_started = false;
 
-        // Se la macchina è ferma in Idle e non abbiamo ancora verificato il file in questo ciclo
-        if (sys.state == State::Idle && !file_already_checked) {
+
+      
+       // --- INIZIO AVVIO AUTOMATICO AGGANCIATO ALLA FREQUENZA DEL REPORT IDLE ---
+        static bool file_already_started = false;
+        static uint32_t last_idle_report_time = 0;
+
+        // Eseguiamo il controllo SOLO quando la macchina è in Idle, 
+        // non ha ancora avviato il file, E solo UNA VOLTA AL SECONDO (in concomitanza con la risposta di stato)
+        if (sys.state == State::Idle && !file_already_started && (millis() - last_idle_report_time >= 1000)) {
             #ifdef ENABLE_SD_CARD
-            // Tentiamo di aprire direttamente il file per vedere se il File System della SD risponde
+            last_idle_report_time = millis(); // Aggiorna il tempo per saltare i successivi cicli rapidi
+
+            // Controlliamo se è presente il file costycnc.nc sulla SD
             File testFile = SD.open("/costycnc.nc", "r");
             
             if (testFile) {
-                // Il file esiste ed è accessibile! Chiudiamo subito il test per liberarlo
+                // Il file c'è! Lo chiudiamo subito per liberarlo
                 testFile.close();
                 
-                // Se il timer non è ancora partito, lo avviamo ora
-                if (!timer_started) {
-                    sd_stable_timer = millis();
-                    timer_started = true;
-                    grbl_send(CLIENT_ALL, "[MSG:File costycnc.nc rilevato! Avvio automatico in 2 secondi...]\r\n");
-                }
+                // Segnaliamo l'evento sul terminale insieme alla risposta Idle
+                grbl_send(CLIENT_ALL, "[MSG:Sistema in Idle. File costycnc.nc rilevato -> Avvio taglio...]\r\n");
                 
-                // Se il timer è partito e sono passati i 2 secondi (2000 ms)
-                if (timer_started && (millis() - sd_stable_timer >= 2000)) {
-                    timer_started = false;
-                    file_already_checked = true; // Blocca il controllo per evitare loop infiniti
-                    
-                    // Creiamo la riga di comando per l'avvio del file SD
-                    char web_command[] = "$SD/Run=costycnc.nc";
-                    
-                    // Richiamiamo la funzione di sistema con i permessi di default (0)
-                    system_execute_line(web_command, CLIENT_SERIAL, 0);
-                }
-            } else {
-                // Se il file non si apre (SD non inserita o file mancante), azzeriamo il timer
-                timer_started = false;
+                // Inviamo il comando ufficiale di riproduzione usando la macro nativa MKS
+                MKS_GRBL_CMD_SEND("$SD/Run=costycnc.nc\n");
+                
+                // Blocchiamo il controllo per evitare che il comando venga rinviato al ciclo successivo
+                file_already_started = true;
             }
             #endif
         }
 
-        // Se la scheda SD viene rimossa (il file non è più accessibile), resettiamo lo stato
-        #ifdef ENABLE_SD_CARD
-        if (file_already_checked && sys.state == State::Idle) {
+        // Se la scheda SD viene rimossa (il file non si apre più), resettiamo il flag quando siamo in Idle
+        if (file_already_started && sys.state == State::Idle && (millis() - last_idle_report_time >= 2000)) {
+            #ifdef ENABLE_SD_CARD
             File checkRemoved = SD.open("/costycnc.nc", "r");
             if (!checkRemoved) {
-                file_already_checked = false; // La SD è stata tolta, resetta tutto per il prossimo inserimento
+                file_already_started = false; // SD rimossa, reset pronto per quando verrà reinserita
             } else {
                 checkRemoved.close();
             }
+            #endif
         }
-        #endif
-        // --- FINE AVVIO AUTOMATICO ---
+        // --- FINE AVVIO AUTOMATICO DA RISPOSTA IDLE ---
 
 
       
