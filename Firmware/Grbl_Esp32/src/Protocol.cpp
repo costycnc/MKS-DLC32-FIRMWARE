@@ -27,6 +27,7 @@
 #include "lvgl.h"
 #include "mks/MKS_draw_print.h"
 #include "mks/MKS_draw_wifi.h"
+#include "mks/MKS_SDCard.h" // <-- AGGIUNGI QUESTA RIGA QUI
 
 static void protocol_exec_rt_suspend();
 
@@ -153,6 +154,27 @@ void protocol_main_loop() {
     int c;
     bool is_need_next = false;
     for (;;) {
+
+        // --- INIZIO MODIFICA TAGLIO AUTOMATICO DA MASSA ---
+        static bool last_trigger_state = HIGH;
+        bool current_trigger_state = digitalRead(TRIGGER_SD_PIN);
+
+        // Se il pin passa da HIGH a LOW (messo a massa) e la macchina è ferma in IDLE
+        if (current_trigger_state == LOW && last_trigger_state == HIGH && sys.state == State::Idle) {
+            #ifdef ENABLE_SD_CARD
+            // Controlla se la SD è montata o pronta
+            if (sd_mount()) { 
+                char my_file[] = "/costycnc.nc";
+                if (openFile(my_file)) {
+                    grbl_send(CLIENT_ALL, "[MSG:Pulsante EXP1 premuto: Avvio costycnc.nc]\r\n");
+                }
+            }
+            #endif
+        }
+        last_trigger_state = current_trigger_state;
+        // --- FINE MODIFICA ---
+
+      
 #if 1
 #ifdef ENABLE_SD_CARD
         if (SD_ready_next) {
