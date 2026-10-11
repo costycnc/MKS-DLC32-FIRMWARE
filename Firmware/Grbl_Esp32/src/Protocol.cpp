@@ -155,32 +155,34 @@ void protocol_main_loop() {
     bool is_need_next = false;
     for (;;) {
 
-        // --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD STABILE ---
+        // --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD SICURO ---
         static bool last_sd_inserted = false;
         static uint32_t sd_timer = 0;
         static bool timer_active = false;
 
-        // Usiamo la variabile globale di grblESP32/MKS per verificare se la SD è montata correttamente
-        bool current_sd_inserted = (sd_state == SDState::Ready);
+        // Verifichiamo lo stato leggendo direttamente se l'interfaccia hardware è attiva
+        bool current_sd_inserted = (SD.cardType() != CARD_NONE);
 
-        // Se la scheda è pronta e prima non lo era (e la macchina è in Idle)
+        // Se la scheda è inserita e prima non lo era (e la macchina è ferma)
         if (current_sd_inserted && !last_sd_inserted && sys.state == State::Idle) {
-            sd_timer = millis(); // Far partire il cronometro
+            sd_timer = millis(); // Avvia il cronometro
             timer_active = true;
-            grbl_send(CLIENT_ALL, "[MSG:Scheda SD pronta! Lettura file tra 2 secondi...]\r\n");
+            grbl_send(CLIENT_ALL, "[MSG:Scheda SD rilevata! Inizializzazione in corso...]\r\n");
         }
 
-        // Se viene rimossa, spegni il timer
+        // Se la scheda viene estratta, spegne il timer
         if (!current_sd_inserted) {
             timer_active = false;
         }
 
-        // Quando scadono i 2 secondi
+        // Quando il timer è attivo e sono passati i 2000ms (2 secondi)
         if (timer_active && (millis() - sd_timer >= 2000)) {
-            timer_active = false; // Spegni il timer per non ciclare all'infinito
+            timer_active = false; // Disattiva il timer per non farlo ripetere
             
             #ifdef ENABLE_SD_CARD
-            // Lanciamo il file passando l'oggetto SD (oppure proviamo solo con il percorso se richiesto)
+            // Eseguiamo un montaggio forzato hardware prima di aprire il file per assicurarci che sia pronta al 100%
+            SD.begin(GRBL_SPI_SS, SPI, GRBL_SPI_FREQ);
+            
             if (openFile(SD, "/costycnc.nc")) {
                 grbl_send(CLIENT_ALL, "[MSG:Automazione: Esecuzione di costycnc.nc in corso]\r\n");
             } else {
