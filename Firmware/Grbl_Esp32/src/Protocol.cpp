@@ -155,36 +155,36 @@ void protocol_main_loop() {
     bool is_need_next = false;
     for (;;) {
 
-        // --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD ---
+        // --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD STABILE ---
         static bool last_sd_inserted = false;
         static uint32_t sd_timer = 0;
         static bool timer_active = false;
 
-        // Controlliamo l'hardware dell'ESP32 per vedere se la SD è inserita
-        bool current_sd_inserted = (SD.cardType() != CARD_NONE);
+        // Usiamo la variabile globale di grblESP32/MKS per verificare se la SD è montata correttamente
+        bool current_sd_inserted = (sd_state == SDState::Ready);
 
-        // Se la scheda è stata appena inserita e la macchina è ferma (Idle)
+        // Se la scheda è pronta e prima non lo era (e la macchina è in Idle)
         if (current_sd_inserted && !last_sd_inserted && sys.state == State::Idle) {
-            sd_timer = millis(); // Facciamo partire il cronometro interno
+            sd_timer = millis(); // Far partire il cronometro
             timer_active = true;
-            grbl_send(CLIENT_ALL, "[MSG:Scheda SD inserita! Avvio automatico in 2 secondi...]\r\n");
+            grbl_send(CLIENT_ALL, "[MSG:Scheda SD pronta! Lettura file tra 2 secondi...]\r\n");
         }
 
-        // Se la scheda viene tolta mentre il timer sta contando, annulliamo tutto
+        // Se viene rimossa, spegni il timer
         if (!current_sd_inserted) {
             timer_active = false;
         }
 
-        // Se il timer è attivo e sono passati 2000 millisecondi (2 secondi)
+        // Quando scadono i 2 secondi
         if (timer_active && (millis() - sd_timer >= 2000)) {
-            timer_active = false; // Spegniamo il timer per evitare cicli infiniti
+            timer_active = false; // Spegni il timer per non ciclare all'infinito
             
             #ifdef ENABLE_SD_CARD
-            // Apriamo il file system passando l'oggetto SD e il percorso esatto del file
+            // Lanciamo il file passando l'oggetto SD (oppure proviamo solo con il percorso se richiesto)
             if (openFile(SD, "/costycnc.nc")) {
                 grbl_send(CLIENT_ALL, "[MSG:Automazione: Esecuzione di costycnc.nc in corso]\r\n");
             } else {
-                grbl_send(CLIENT_ALL, "[MSG:Errore: Impossibile trovare il file /costycnc.nc nella SD!]\r\n");
+                grbl_send(CLIENT_ALL, "[MSG:Errore: Impossibile trovare il file /costycnc.nc nella root SD!]\r\n");
             }
             #endif
         }
