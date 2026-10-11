@@ -155,25 +155,41 @@ void protocol_main_loop() {
     bool is_need_next = false;
     for (;;) {
 
-        // --- INIZIO MODIFICA TAGLIO AUTOMATICO DA MASSA ---
-        static bool last_trigger_state = HIGH;
-        bool current_trigger_state = digitalRead(TRIGGER_SD_PIN);
+        // --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD ---
+        static bool last_sd_inserted = false;
+        static uint32_t sd_timer = 0;
+        static bool timer_active = false;
 
-        // Se il pin passa da HIGH a LOW (messo a massa) e la macchina è ferma in IDLE
-        if (current_trigger_state == LOW && last_trigger_state == HIGH && sys.state == State::Idle) {
+        // Controlliamo l'hardware dell'ESP32 per vedere se la SD è inserita
+        bool current_sd_inserted = (SD.cardType() != CARD_NONE);
+
+        // Se la scheda è stata appena inserita e la macchina è ferma (Idle)
+        if (current_sd_inserted && !last_sd_inserted && sys.state == State::Idle) {
+            sd_timer = millis(); // Facciamo partire il cronometro interno
+            timer_active = true;
+            grbl_send(CLIENT_ALL, "[MSG:Scheda SD inserita! Avvio automatico in 2 secondi...]\r\n");
+        }
+
+        // Se la scheda viene tolta mentre il timer sta contando, annulliamo tutto
+        if (!current_sd_inserted) {
+            timer_active = false;
+        }
+
+        // Se il timer è attivo e sono passati 2000 millisecondi (2 secondi)
+        if (timer_active && (millis() - sd_timer >= 2000)) {
+            timer_active = false; // Spegniamo il timer per evitare cicli infiniti
+            
             #ifdef ENABLE_SD_CARD
-            // Controlliamo direttamente se il driver SD risponde inserendo l'interfaccia "SD"
-            if (SD.cardType() != CARD_NONE) { 
-                if (openFile(SD, "/costycnc.nc")) {
-                    grbl_send(CLIENT_ALL, "[MSG:Pulsante EXP1 premuto: Avvio costycnc.nc]\r\n");
-                }
+            // Apriamo il file system passando l'oggetto SD e il percorso esatto del file
+            if (openFile(SD, "/costycnc.nc")) {
+                grbl_send(CLIENT_ALL, "[MSG:Automazione: Esecuzione di costycnc.nc in corso]\r\n");
             } else {
-                grbl_send(CLIENT_ALL, "[MSG:Errore: Scheda SD non rilevata nel lettore!]\r\n");
+                grbl_send(CLIENT_ALL, "[MSG:Errore: Impossibile trovare il file /costycnc.nc nella SD!]\r\n");
             }
             #endif
         }
-        last_trigger_state = current_trigger_state;
-        // --- FINE MODIFICA ---
+        last_sd_inserted = current_sd_inserted;
+        // --- FINE AVVIO AUTOMATICO DA INSERIMENTO SD ---
 
 
 
