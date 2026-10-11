@@ -155,19 +155,19 @@ void protocol_main_loop() {
     bool is_need_next = false;
     for (;;) {
 
-        // --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD SICURO ---
+        // --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD (MESSAGGIO WEB) ---
         static bool last_sd_inserted = false;
         static uint32_t sd_timer = 0;
         static bool timer_active = false;
 
-        // Verifichiamo lo stato leggendo direttamente se l'interfaccia hardware è attiva
+        // Verifichiamo se la scheda SD è dentro il lettore
         bool current_sd_inserted = (SD.cardType() != CARD_NONE);
 
-        // Se la scheda è inserita e prima non lo era (e la macchina è ferma)
+        // Se la scheda è inserita e prima non lo era (e la macchina è in Idle)
         if (current_sd_inserted && !last_sd_inserted && sys.state == State::Idle) {
             sd_timer = millis(); // Avvia il cronometro
             timer_active = true;
-            grbl_send(CLIENT_ALL, "[MSG:Scheda SD rilevata! Inizializzazione in corso...]\r\n");
+            grbl_send(CLIENT_ALL, "[MSG:Scheda SD inserita! Avvio automatico in 2 secondi...]\r\n");
         }
 
         // Se la scheda viene estratta, spegne il timer
@@ -175,19 +175,16 @@ void protocol_main_loop() {
             timer_active = false;
         }
 
-        // Quando il timer è attivo e sono passati i 2000ms (2 secondi)
+        // Quando scadono i 2000ms (2 secondi)
         if (timer_active && (millis() - sd_timer >= 2000)) {
-            timer_active = false; // Disattiva il timer per non farlo ripetere
+            timer_active = false; // Disattiva il timer
             
             #ifdef ENABLE_SD_CARD
-            // Eseguiamo un montaggio forzato hardware prima di aprire il file per assicurarci che sia pronta al 100%
-            SD.begin(GRBL_SPI_SS, SPI, GRBL_SPI_FREQ);
+            // Creiamo il comando identico a quello che manderesti dalla WebUI
+            char web_command[] = "$SD/Run=costycnc.nc";
             
-            if (openFile(SD, "/costycnc.nc")) {
-                grbl_send(CLIENT_ALL, "[MSG:Automazione: Esecuzione di costycnc.nc in corso]\r\n");
-            } else {
-                grbl_send(CLIENT_ALL, "[MSG:Errore: Impossibile trovare il file /costycnc.nc nella root SD!]\r\n");
-            }
+            // Eseguiamo il comando simulando l'ingresso seriale/web principale
+            execute_line(web_command, CLIENT_SERIAL, WebUI::AuthenticationLevel::ADMIN);
             #endif
         }
         last_sd_inserted = current_sd_inserted;
