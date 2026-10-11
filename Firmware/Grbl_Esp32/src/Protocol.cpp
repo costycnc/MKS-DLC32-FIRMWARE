@@ -162,11 +162,11 @@ void protocol_main_loop() {
         static uint32_t last_idle_report_time = 0;
 
         // Il controllo avviene una volta al secondo, solo in Idle e se il file non è già partito
-        if (sys.state == State::Idle && !file_already_started && (millis() - last_idle_report_time >= 1000)) {
+        if (sys.state == State::Idle && !file_already_started && (millis() - last_idle_report_time >= 3000)) {
       
                 
-                grbl_send(CLIENT_ALL, "[bla]\r\n");
             #ifdef ENABLE_SD_CARD
+                grbl_send(CLIENT_ALL, "[bla]\r\n");
             last_idle_report_time = millis(); // Aggiorna il tempo istantaneamente
 
             // Tentiamo di aprire il file sulla SD
