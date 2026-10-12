@@ -155,12 +155,11 @@ void protocol_main_loop() {
     for (;;) {
 
 
-      
-        // --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD CON VERIFICA FILE (VERSIONE CORRETTA) ---
+                  // --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD CON VERIFICA FILE ---
         static bool file_already_started = false;
         static uint32_t last_sd_check_time = 0;
 
-        // Eseguiamo il controllo reale OGNI 3 secondi (3000 ms) per non stressare la CPU
+        // Eseguiamo il controllo reale ogni 3 secondi (3000 ms)
         if (millis() - last_sd_check_time >= 3000) {
             last_sd_check_time = millis(); // Aggiorna il cronometro istantaneamente
 
@@ -171,6 +170,7 @@ void protocol_main_loop() {
             if (sys.state == State::Idle && current_sd_ready && !file_already_started) {
                 #ifdef ENABLE_SD_CARD
                 
+                // --- STRATEGIA DI VERIFICA PRESENZA FILE ---
                 // Proviamo ad aprire direttamente il file per essere sicuri che esista
                 File testFile = SD.open("/costycnc.nc", "r");
                 
@@ -183,28 +183,25 @@ void protocol_main_loop() {
                     // Inviamo il comando ufficiale di riproduzione usando la macro nativa MKS
                     MKS_GRBL_CMD_SEND("$SD/Run=costycnc.nc\n");
                     
-                    // Blocchiamo il controllo per eseguire il file UNA SOLA VOLTA
+                    // Blocchiamo il controllo per evitare ripetizioni
                     file_already_started = true;
                 } else {
                     // Se il file NON viene trovato, abbandona l'operazione e avvisa l'utente
                     grbl_send(CLIENT_ALL, "[MSG:Errore: Scheda inserita ma /costycnc.nc NON presente. Abbandono!]\r\n");
                     
-                    // Blocchiamo comunque così non bombarda di messaggi d'errore finché non togli la scheda
+                    // Impostiamo a true così non bombarda di messaggi d'errore finché non togli la scheda
                     file_already_started = true; 
                 }
                 #endif
             }
 
-            // SEZIONE CORRETTA: Il reset del flag deve avvenire dentro il timer dei 3 secondi!
-            // Se la scheda SD viene rimossa, allora (e solo allora) liberiamo il sistema per il prossimo inserimento
+            // Se la scheda SD viene rimossa, resettiamo il flag e liberiamo il sistema
             if (!current_sd_ready && file_already_started && sys.state == State::Idle) {
                 file_already_started = false; // SD rimossa, reset completato con successo
                 grbl_send(CLIENT_ALL, "[MSG:Scheda SD rimossa! Sistema pronto per il prossimo inserimento.]\r\n");
             }
         }
         // --- FINE AVVIO AUTOMATICO DA INSERIMENTO SD CON VERIFICA FILE ---
-
-
 
 
 
