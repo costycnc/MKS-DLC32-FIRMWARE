@@ -27,7 +27,6 @@
 #include "lvgl.h"
 #include "mks/MKS_draw_print.h"
 #include "mks/MKS_draw_wifi.h"
-#include "mks/MKS_SDCard.h" // <-- AGGIUNGI QUESTA RIGA QUI
 
 static void protocol_exec_rt_suspend();
 
