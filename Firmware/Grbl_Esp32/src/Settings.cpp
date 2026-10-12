@@ -278,8 +278,7 @@ void AxisMaskSetting::addWebui(WebUI::JSONencoder* j) {
 }
 
 
-
-// Dichiarazione del puntatore globale (Sicuro per l'avvio degli altri file)
+// Dichiarazione del puntatore globale (Innocuo per l'ordine di boot)
 StringSetting* esp_auto_file;
 
 
@@ -784,3 +783,23 @@ void Coordinates::set(float value[MAX_N_AXIS]) {
 #endif
     nvs_set_blob(Setting::_handle, _name, _currentValue, sizeof(_currentValue));
 }
+
+// --- REGISTRAZIONE PROMPT $esp145 NELL'ELENCO IMPOSTAZIONI ---
+class EspAutoFileInit {
+public:
+    EspAutoFileInit() {
+        esp_auto_file = new StringSetting(
+            "AutoRun SD File Name",   // description
+            GRBL_STRING,              // type
+            AMIN,                     // permissions
+            "esp145",                 // grblName (Comando da prompt: $esp145)
+            "EspAutoFile",            // name (Nome identificativo)
+            "",                       // defVal (Di fabbrica vuoto = disattivato)
+            0,                        // min length
+            31,                       // max length
+            NULL                      // checker
+        );
+    }
+};
+static EspAutoFileInit espAutoFileInitializer;
+
