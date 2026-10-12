@@ -156,53 +156,69 @@ void protocol_main_loop() {
 
 
       
-              // --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD CON VERIFICA FILE ---
+        // --- INIZIO AVVIO AUTOMATICO CONFIGURABILE TRAMITE STRINGA NATIVA $esp145 ---
         static bool file_already_started = false;
         static uint32_t last_sd_check_time = 0;
 
-        // Eseguiamo il controllo reale ogni 3 secondi (3000 ms)
-        if (millis() - last_sd_check_time >= 3000) {
-            last_sd_check_time = millis(); // Aggiorna il cronometro istantaneamente
+        // Protezione hardware: esegui solo se il puntatore è stato creato correttamente
+        if (esp_auto_file != nullptr) {
+            
+            // Recuperiamo il nome del file memorizzato dall'utente tramite $esp145
+            const char* target_file = esp_auto_file->get();
 
-            // Interroghiamo elettricamente i pin dello slot per verificare lo stato reale
-            bool current_sd_ready = (get_sd_state(true) == SDState::Idle);
+            // L'automazione si attiva SOLO se $esp145 non è vuoto ed ha caratteri validi
+            if (target_file != nullptr && target_file[0] != '\0') {
 
-            // Se la macchina è in Idle, la SD è pronta e il taglio non è ancora partito
-            if (sys.state == State::Idle && current_sd_ready && !file_already_started) {
-                #ifdef ENABLE_SD_CARD
-                
-                // --- STRATEGIA DI VERIFICA PRESENZA FILE ---
-                // Proviamo ad aprire direttamente il file per essere sicuri che esista
-                File testFile = SD.open("/costycnc.nc", "r");
-                
-                if (testFile) {
-                    // Il file esiste! Lo chiudiamo subito per liberare la memoria
-                    testFile.close();
-                    
-                    grbl_send(CLIENT_ALL, "[MSG:Scheda SD pronta e file /costycnc.nc trovato! Avvio taglio...]\r\n");
-                    
-                    // Inviamo il comando ufficiale di riproduzione usando la macro nativa MKS
-                    MKS_GRBL_CMD_SEND("$SD/Run=costycnc.nc\n");
-                    
-                    // Blocchiamo il controllo per evitare ripetizioni
-                    file_already_started = true;
-                } else {
-                    // Se il file NON viene trovato, abbandona l'operazione e avvisa l'utente
-                    grbl_send(CLIENT_ALL, "[MSG:Errore: Scheda inserita ma /costycnc.nc NON presente. Abbandono!]\r\n");
-                    
-                    // Impostiamo a true così non bombarda di messaggi d'errore finché non togli la scheda
-                    file_already_started = true; 
+                // Eseguiamo il controllo reale ogni 3 secondi (3000 ms) in base ai report di Idle
+                if (millis() - last_sd_check_time >= 3000) {
+                    last_sd_check_time = millis(); // Aggiorna il cronometro istantaneamente
+
+                    // Interroghiamo elettricamente i pin dello slot per verificare lo stato reale
+                    bool current_sd_ready = (get_sd_state(true) == SDState::Idle);
+
+                    // Se la macchina è in Idle, la SD è pronta e il taglio non è ancora partito
+                    if (sys.state == State::Idle && current_sd_ready && !file_already_started) {
+                        #ifdef ENABLE_SD_CARD
+                        
+                        // Allocazione fissa in RAM per il percorso del file (es: /costycnc.nc)
+                        char file_path[64];
+                        snprintf(file_path, sizeof(file_path), "/%s", target_file);
+
+                        // Proviamo ad aprire direttamente il file configurato in $esp145
+                        File testFile = SD.open(file_path, "r");
+                        
+                        if (testFile) {
+                            testFile.close(); // Il file c'è! Lo chiudiamo subito per liberare la memoria
+                            
+                            grbl_send(CLIENT_ALL, "[MSG:Stato Idle. File configurato in $esp145 trovato! Avvio taglio...]\r\n");
+                            
+                            // Allocazione fissa in RAM per compilare il comando ufficiale dinamico MKS
+                            char run_cmd[64];
+                            snprintf(run_cmd, sizeof(run_cmd), "$SD/Run=%s\n", target_file);
+                            MKS_GRBL_CMD_SEND(run_cmd);
+                            
+                            file_already_started = true; // Blocchiamo le ripetizioni
+                        } else {
+                            // Se il file scritto in $esp145 non esiste sulla SD, interrompiamo in sicurezza
+                            grbl_sendf(CLIENT_ALL, "[MSG:Errore: Scheda inserita ma il file /%s NON esiste. Abbandono!]\r\n", target_file);
+                            file_already_started = true; 
+                        }
+                        #endif
+                    }
+
+                    // Se la scheda SD viene rimossa, resettiamo il flag per il prossimo inserimento
+                    if (!current_sd_ready && file_already_started && sys.state == State::Idle) {
+                        file_already_started = false; 
+                        grbl_send(CLIENT_ALL, "[MSG:Scheda SD rimossa! Sistema pronto.]\r\n");
+                    }
                 }
-                #endif
-            }
-
-            // Se la scheda SD viene rimossa, resettiamo il flag e liberiamo il sistema
-            if (!current_sd_ready && file_already_started && sys.state == State::Idle) {
-                file_already_started = false; // SD rimossa, reset completato con successo
-                grbl_send(CLIENT_ALL, "[MSG:Scheda SD rimossa! Sistema pronto per il prossimo inserimento.]\r\n");
+            } else {
+                // Se $esp145 viene lasciato vuoto, la funzione automatica rimane disattivata
+                file_already_started = false;
             }
         }
-        // --- FINE AVVIO AUTOMATICO DA INSERIMENTO SD CON VERIFICA FILE ---
+        // --- FINE AVVIO AUTOMATICO CONFIGURABILE TRAMITE $esp145 ---
+
 
 
 
