@@ -28,6 +28,9 @@
 #include "mks/MKS_draw_print.h"
 #include "mks/MKS_draw_wifi.h"
 
+// <-- AGGIUNGI QUESTA RIGA QUI PER RENDERE LA VARIABILE VISIBILE A QUESTO FILE
+extern StringSetting* esp_auto_file; 
+
 static void protocol_exec_rt_suspend();
 
 static char    line[LINE_BUFFER_SIZE];     // Line to be executed. Zero-terminated.
