@@ -165,7 +165,7 @@ void protocol_main_loop() {
             last_sd_check_time = millis(); // Aggiorna il cronometro istantaneamente
 
             // Leggiamo la variabile in RAM in modo ultra-leggero tramite la funzione ufficiale MKS
-            bool current_sd_ready = (get_sd_state(false) == SDState::Idle);
+            bool current_sd_ready = (get_sd_state(true) == SDState::Idle);
 
             // Stampiamo lo stato corrente sulla console seriale/Web ogni 3 secondi insieme all'Idle
             if (current_sd_ready) {
