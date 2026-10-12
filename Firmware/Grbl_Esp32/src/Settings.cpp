@@ -279,6 +279,19 @@ void AxisMaskSetting::addWebui(WebUI::JSONencoder* j) {
 
 StringSetting* esp_auto_file;
 
+// --- INIZIALIZZAZIONE PARAMETRO $esp145 PER AUTORUN ---
+StringSetting* esp_auto_file = new StringSetting(
+    "AutoRun SD File Name",   // Descrizione
+    GRBL_STRING,              // Tipo di parametro GRBL
+    AMIN,                     // Permessi di amministrazione
+    "esp145",                 // Comando da digitare nel Prompt ($esp145)
+    "EspAutoFile",            // Nome interno dell'impostazione
+    "",                       // Valore di fabbrica predefinito (Vuoto = Spento)
+    0,                        // Lunghezza minima della stringa
+    31                        // Lunghezza massima della stringa (Nome file)
+);
+
+
 
 FloatSetting::FloatSetting(const char*   description,
                            type_t        type,
