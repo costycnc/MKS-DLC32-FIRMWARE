@@ -61,6 +61,25 @@ At this point, **we realized we were over-complicating a beautiful, working solu
 
 **We decided to stop fighting the framework and abandoned the dynamic parameter.** By stripping down the structural overhead and reverting back to the lean, original hardcoded routine targeting `/costycnc.nc`, we regained 100% compilation safety, zero boot overhead, and an ultra-fluid movement engine. The mode passed, but the raw efficiency of the bits won!
 
+### 🐛 The G-Code Modal Loop Bug: The Hidden Trap of `S0` and `M03`
+
+During testing, we discovered a highly unusual software loop bug triggered by specific G-Code endings. In hot-wire foam cutting, it is common practice **NOT to send `M05` (Spindle Off) immediately** at the end of the toolpath. If the wire turns cold instantly while still inside the foam block during the homing routine, the shrinking material will trap and snap the wire. Keeping the path modally "active" but dropping the heat down via software ensures a clean exit.
+
+However, our automated routine started **re-executing the G-Code file endlessly from the beginning**. The motherboard was not physically rebooting; instead, the file would finish, the machine would wait for exactly 3 seconds (matching our software timer), and then it would start the entire cutting process all over again.
+
+#### 🔍 The Investigation and the Logic Bug:
+1. **The Code Suspicion:** Since this happened right after reversing the failed `$esp145` parameter experiment, we initially thought our `Protocol.cpp` clean-up was broken. But the code structure was flawless.
+2. **The G-Code Experiments:** To troubleshoot, we tested different final lines:
+   - Ending with **`G01 X0 S0`**: The machine repeated the cut indefinitely every 3 seconds.
+   - Ending with **`M03 S0`**: The CNC still repeated the cycle, refusing to go into stable standby.
+   - **The Solution:** Removing any mention of `M03` or `S0` from the final lines of the G-Code file caused the machine to execute the cut exactly **once** and stop perfectly in a stable state.
+
+#### 🛑 Why this happens (The GRBL Modal Bug):
+This is a core architectural bug related to how GRBL handles status reports (\$10) and modal states. When a file ends with an active spindle state (like `M03` or a modally active `S0`), the internal state machine of the MKS firmware doesn't fully clear the buffer. 
+
+Even if the file execution mechanically reaches the last line, the active spindle flag fools the hardware layer into thinking a data stream is still incoming or pending. This prevents the system from triggering a clean, isolated transition back to a true static `Idle`. Our 3-second software sensor (`get_sd_state`) would look at the card, see it was still mounted, and because the system state was hovering in an unstable modal limbo, it would re-inject the `$SD/Run` command, starting the file execution again.
+
+This confirms an unpatched core bug regarding the `M05` execution flow that was already brought up years ago—proving once again that in low-level microcontrollers, **G-Code modal states and software loops are deeply intertwined!**
 ---
 
 ## 🚀 Key Features
