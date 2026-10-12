@@ -277,6 +277,9 @@ void AxisMaskSetting::addWebui(WebUI::JSONencoder* j) {
     }
 }
 
+StringSetting* esp_auto_file;
+
+
 FloatSetting::FloatSetting(const char*   description,
                            type_t        type,
                            permissions_t permissions,
