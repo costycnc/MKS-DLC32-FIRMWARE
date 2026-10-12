@@ -156,34 +156,26 @@ void protocol_main_loop() {
 
 
       
-        // --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD (LOGICA NATIVA MKS) ---
-        static bool file_already_started = false;
+        // --- INIZIO TEST RILEVAZIONE SCHEDA SD OGNI 3 SECONDI ---
+        static bool last_sd_ready = false;
+        static uint32_t last_sd_check_time = 0;
 
-        // Leggiamo la variabile in RAM in modo ultra-leggero tramite la funzione ufficiale MKS
-        // SDState::Idle significa che la scheda è inserita e pronta all'uso
-        bool current_sd_ready = (get_sd_state(false) == SDState::Idle);
+        // Eseguiamo il controllo ogni 3000 millisecondi (3 secondi), a passo con i report di sistema
+        if (millis() - last_sd_check_time >= 3000) {
+            last_sd_check_time = millis(); // Aggiorna il cronometro istantaneamente
 
-        // Se la macchina si trova nello stato Idle, la SD è pronta, e il taglio non è ancora partito
-        if (sys.state == State::Idle && current_sd_ready && !file_already_started) {
-            #ifdef ENABLE_SD_CARD
-            
-            grbl_send(CLIENT_ALL, "[MSG:Scheda SD pronta rilevata! Avvio taglio automatico...]\r\n");
-            
-            // Inviamo il comando ufficiale di riproduzione usando la macro nativa MKS
-            MKS_GRBL_CMD_SEND("$SD/Run=costycnc.nc\n");
-            
-            // Blocchiamo il controllo per evitare che il comando venga rinviato all'infinito
-            file_already_started = true;
-            
-            #endif
+            // Leggiamo la variabile in RAM in modo ultra-leggero tramite la funzione ufficiale MKS
+            bool current_sd_ready = (get_sd_state(false) == SDState::Idle);
+
+            // Stampiamo lo stato corrente sulla console seriale/Web ogni 3 secondi insieme all'Idle
+            if (current_sd_ready) {
+                grbl_send(CLIENT_ALL, "[MSG:TEST SD (Ogni 3s) -> Inserita e Pronta!]\r\n");
+            } else {
+                grbl_send(CLIENT_ALL, "[MSG:TEST SD (Ogni 3s) -> Non Rilevata!]\r\n");
+            }
         }
+        // --- FINE TEST RILEVAZIONE ---
 
-        // Se la scheda SD viene rimossa (lo stato passa a qualcosa di diverso da Idle),
-        // resettiamo il flag in modo che la macchina sia pronta per il prossimo inserimento
-        if (!current_sd_ready && file_already_started && sys.state == State::Idle) {
-            file_already_started = false; // SD rimossa, reset completato con successo
-        }
-        // --- FINE AVVIO AUTOMATICO MKS ---
 
 
 
