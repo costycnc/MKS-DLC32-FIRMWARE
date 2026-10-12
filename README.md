@@ -1,30 +1,22 @@
-                        Original readme
-                        # MKS-DLC32-FIRMWARE  The source code of MKS DLC32.
-                        ## Environment construction:
-                        - vscode                        
-                        - platformIO                     
-                        PlatformIOc needs to be installed on vscode.                     
-                        Open Firmware with vscode, and platformIO will be started, In the platform.ini file，                
-                        `default_envs = mks_dlc32_v2_1`                  
-                        Note:We will make a pin suitable for V1.0，Settings corresponding to the selection of coreXY.                  
-                        Then compile and download.
+# MKS-DLC32-FIRMWARE  The source code of MKS DLC32.
+## Environment construction:
+- vscode                        
+- platformIO                     
+PlatformIOc needs to be installed on vscode.                     
+Open Firmware with vscode, and platformIO will be started, In the platform.ini file，                
+`default_envs = mks_dlc32_v2_1`                  
+Note:We will make a pin suitable for V1.0，Settings corresponding to the selection of coreXY.                  
+Then compile and download.
 
-# MKS-DLC32 Firmware Automation (CoreXY / Foam Cutter)
+---
 
-This repository contains the optimized firmware for the **MKS DLC32 V2.1** board, configured for **CoreXY** kinematics (such as hot-wire CNC foam cutters or laser systems).
+# MKS-DLC32 Universal Firmware Automation (SD AutoRun Fork)
 
-> 🌍 **Universal Compatibility:** Although this automation was originally developed and tested for **CostyCNC** foam cutters, this firmware is **100% universal**. It works perfectly on **ANY CNC router, laser engraver, or CoreXY machine** in the world, as long as it uses the standard **MKS DLC32 V2.1** mainboard.
+This repository contains an optimized, universal fork of the official Makerbase firmware for the **MKS DLC32 V2.1** motherboard, configured for **CoreXY** kinematics (such as hot-wire CNC foam cutters or laser systems).
 
+> 🌍 **Universal Compatibility:** Although this automation was originally developed and tested for **CostyCNC** foam cutters, this firmware is **100% universal**. It works perfectly on **ANY CNC router, laser engraver, or CoreXY machine** in the world, as long as it uses the standard **MKS DLC32 V2.1** mainboard. It does not require any specific brand-locked hardware.
 
-## 📖 The Story Behind This Project (How It All Began)
-
-Every great open-source modification comes from a real-world necessity. This project started in the **costycnc.it** workshop with a clear goal: creating a completely standalone hot-wire foam cutting machine that could start a job instantly **just by inserting the MicroSD card**, without requiring a computer, a Wi-Fi connection, or screen interaction. 
-
-### ❌ The Failed Attempts (The Hardware Battle)
-Our first instinct was to use a classic hardware approach: wiring a physical button to the board to trigger the file. However, the **MKS DLC32 V2.1** board threw several hidden engineering obstacles at us:
-1. **The EXP1 Header Failure (GPIO 25):** We mapped the pinout and wired a button to GPIO 25. It failed due to deep software conflicts. Even without a display attached, the proprietary background graphics libraries (`display_init()` / `MKS_LVGL`) kept reconfiguring the pin, floating it, and causing infinite ghost-trigger loops that flooded the serial console.
-2. **The EXP2 Header Failure (GPIO 26):** We tried shifting to the touchscreen controller pins, but encountered identical pin-sharing locks from the core system.
-3. **The Z-Limit Attempt (GPIO 34):** While electrically isolated and pulled high by the onboard 10kΩ hardware resistor, the microsecond loop speed of the ESP32 chip made mechanical button debouncing unreliable without complex external hardware filtering.
+---
 
 ## 🛠️ System Architecture & Core Logic
 
@@ -68,17 +60,11 @@ To make `$esp145` fully production-ready, we still had to:
 At this point, **we realized we were over-complicating a beautiful, working solution.** The scope of the project was stretching out indefinitely, adding bloated layers of software complexity to a machine that just needs to cut material reliably. 
 
 **We decided to stop fighting the framework and abandoned the dynamic parameter.** By stripping down the structural overhead and reverting back to the lean, original hardcoded routine targeting `/costycnc.nc`, we regained 100% compilation safety, zero boot overhead, and an ultra-fluid movement engine. The mode passed, but the raw efficiency of the bits won!
-Faced with endless electrical noise and pin conflicts, we stopped fighting the hardware and asked a different question: *Why add extra buttons when the board already has a perfectly engineered sensor built-in?* **The MicroSD card slot.**
-
-Instead of chasing phantom signals on display pins, we decided to track the physical mounting status of the SD card. By combining a non-blocking timer with a direct check on the filesystem, we created a seamless automation: you slide the card in, the machine silently verifies it, and the motors start moving. No wires, no interference, pure software elegance.
-
-> 🌍 **Universal Compatibility:** Although this automation was originally developed and tested for **CostyCNC** foam cutters, this firmware is **100% universal**. It works perfectly on **ANY CNC router, laser engraver, or CoreXY machine** in the world, as long as it uses the standard **MKS DLC32 V2.1** mainboard.
 
 ---
 
 ## 🚀 Key Features
 
-- 🛠️ **Development Environment:** Fully configured for VS Code and PlatformIO (`default_envs = mks_dlc32_v2_1`).
 - 🤖 **Total Stand-Alone Automation:** Non-blocking hardware scan of the MicroSD card hooked directly into the GRBL loop.
 - ⚡ **CPU Optimization:** The SD file system check triggers only once every 3 seconds (`millis()` filtered). This keeps the ESP32 processor 100% free to calculate stepper motor pulses smoothly and accurately without any jitter.
 - 🛡️ **Safety Guard:** If an SD card is inserted but the required `/costycnc.nc` file is missing, the firmware safely aborts the auto-run sequence instead of spamming error loops.
@@ -106,7 +92,6 @@ During our hardware testing phase, we successfully mapped out the elusive EXP1 h
 - **Pin 9:** Maps to **Ground** (`GND`).
 
 ---
-
 ## 💻 Where to Include the Code & Implementation
 
 The automation routine must be embedded inside **`Grbl_Esp32/src/Protocol.cpp`**. 
@@ -176,9 +161,9 @@ Open `Protocol.cpp`, scroll down to the **`protocol_main_loop()`** function, loc
 
 ---
 
-## 🛠️ How To Use (Stand-Alone Operation)
+## 🛠️ How To Use On Any Machine (Stand-Alone Operation)
 
-1. Generate your CNC G-Code cutting path using your preferred CAM software.
+1. Generate your CNC G-Code cutting path using your preferred CAM software (LaserGRBL, LightBurn, Aspire, etc.).
 2. Rename the exported file to exactly **`costycnc.nc`** (ensure lowercase file extension).
 3. Copy the file directly to the root directory of a MicroSD card formatted in **FAT32**.
 4. Power up your machine (it will sit quietly in `Idle` state).
@@ -192,7 +177,7 @@ Open `Protocol.cpp`, scroll down to the **`protocol_main_loop()`** function, loc
 This project is a custom fork of the Makerbase repository, branching off Bart Dring's core open-source `Grbl_ESP32` architecture. Released under the **GPLv3 License**.
 
 ***
-Developed by [costycnc](https://github.com) - Visit our official website: [costycnc.it](https://costycnc.it)
+Invention and testing credits to [costycnc](https://github.com) - Visit our official website: [costycnc.it](https://costycnc.it)
 
 
 <img width="768" height="1365" alt="Gemini_Generated_Image_7x95qj7x95qj7x95" src="https://github.com/user-attachments/assets/ed314566-1696-43f5-b4c6-d649a3ba32fd" />
