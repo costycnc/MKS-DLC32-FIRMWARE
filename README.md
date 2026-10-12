@@ -31,6 +31,8 @@ Faced with endless electrical noise and pin conflicts, we stopped fighting the h
 
 Instead of chasing phantom signals on display pins, we decided to track the physical mounting status of the SD card. By combining a non-blocking timer with a direct check on the filesystem, we created a seamless automation: you slide the card in, the machine silently verifies it, and the motors start moving. No wires, no interference, pure software elegance.
 
+> 🌍 **Universal Compatibility:** Although this automation was originally developed and tested for **CostyCNC** foam cutters, this firmware is **100% universal**. It works perfectly on **ANY CNC router, laser engraver, or CoreXY machine** in the world, as long as it uses the standard **MKS DLC32 V2.1** mainboard.
+
 ---
 
 ## 🚀 Key Features
