@@ -157,46 +157,27 @@ void protocol_main_loop() {
 
 
       
-        // --- AVVIO AUTOMATICO NON-BLOCCANTE (RISPOSTA IDLE) ---
-        static bool file_already_started = false;
-        static uint32_t last_idle_report_time = 0;
+        // --- RILEVAZIONE INSERIMENTO SD SICURA E LEGGERA ---
+        static bool last_sd_inserted = false;
+        static uint32_t last_sd_check_time = 0;
 
-        // Il controllo avviene una volta al secondo, solo in Idle e se il file non è già partito
-        if (sys.state == State::Idle && !file_already_started && (millis() - last_idle_report_time >= 3000)) {
-      
-                
-            #ifdef ENABLE_SD_CARD
-                grbl_send(CLIENT_ALL, "[bla]\r\n");
-            last_idle_report_time = millis(); // Aggiorna il tempo istantaneamente
+        // Il controllo hardware avviene SOLO una volta ogni 1000 millisecondi (1 secondo)
+        if (millis() - last_sd_check_time >= 1000) {
+            last_sd_check_time = millis(); // Aggiorna il tempo istantaneamente
 
-            // Tentiamo di aprire il file sulla SD
-            File testFile = SD.open("/costycnc.nc", "r");
-            
-            if (testFile) {
-                testFile.close(); // Chiudiamo subito il file per liberare la memoria
-                
-                grbl_send(CLIENT_ALL, "[MSG:Sistema in Idle. File costycnc.nc rilevato -> Avvio taglio...]\r\n");
-                
-                // Inietta il comando ufficiale di riproduzione nella coda nativa MKS
-                MKS_GRBL_CMD_SEND("$SD/Run=costycnc.nc\n");
-                
-                file_already_started = true; // Blocca i controlli successivi per evitare loop
+            // Interroghiamo l'hardware della SD solo adesso
+            bool current_sd_inserted = (SD.cardType() != CARD_NONE);
+
+            // Se la scheda viene inserita in questo momento
+            if (current_sd_inserted && !last_sd_inserted) {
+                grbl_send(CLIENT_ALL, "[MSG:Scheda SD inserita correttamente!]\r\n");
+                MKS_GRBL_CMD_SEND("$X\n"); 
             }
-            #endif
-        }
 
-        // Se rimuovi la SD, resetta il flag per permettere un futuro riavvio
-        if (file_already_started && sys.state == State::Idle && (millis() - last_idle_report_time >= 2000)) {
-            #ifdef ENABLE_SD_CARD
-            File checkRemoved = SD.open("/costycnc.nc", "r");
-            if (!checkRemoved) {
-                file_already_started = false; // SD estratta, sistema pronto per la prossima volta
-            } else {
-                checkRemoved.close();
-            }
-            #endif
+            // Memorizziamo lo stato
+            last_sd_inserted = current_sd_inserted;
         }
-        // --- FINE AVVIO AUTOMATICO ---
+        // --- FINE RILEVAZIONE ---
 
       
 #if 1
