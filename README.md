@@ -25,7 +25,7 @@ This repository contains the optimized firmware for the **MKS DLC32 V2.1** board
 
 ## 📖 The Story Behind This Project (How It All Began)
 
-Every great open-source modification comes from a real-world necessity. This project started in the **costycnc.it** workshop with a clear goal: creating a completely standalone hot-wire foam cutting machine that could start a job instantly, without requiring a computer, a Wi-Fi connection, or screen interaction. 
+Every great open-source modification comes from a real-world necessity. This project started in the **costycnc.it** workshop with a clear goal: creating a completely standalone hot-wire foam cutting machine that could start a job instantly **just by inserting the MicroSD card**, without requiring a computer, a Wi-Fi connection, or screen interaction. 
 
 ### ❌ The Failed Attempts (The Hardware Battle)
 Our first instinct was to use a classic hardware approach: wiring a physical button to the board to trigger the file. However, the **MKS DLC32 V2.1** board threw several hidden engineering obstacles at us:
