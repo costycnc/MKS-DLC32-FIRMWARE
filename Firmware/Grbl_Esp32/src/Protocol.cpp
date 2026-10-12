@@ -155,7 +155,8 @@ void protocol_main_loop() {
     for (;;) {
 
 
-                  // --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD CON VERIFICA FILE ---
+      
+              // --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD CON VERIFICA FILE ---
         static bool file_already_started = false;
         static uint32_t last_sd_check_time = 0;
 
@@ -202,6 +203,7 @@ void protocol_main_loop() {
             }
         }
         // --- FINE AVVIO AUTOMATICO DA INSERIMENTO SD CON VERIFICA FILE ---
+
 
 
 
