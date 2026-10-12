@@ -1,5 +1,6 @@
-# MKS-DLC32-FIRMWARE
-The source code of MKS DLC32.
+                        Original readme
+                        # MKS-DLC32-FIRMWARE
+                        The source code of MKS DLC32.
 
 ## Environment construction:
 
