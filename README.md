@@ -13,7 +13,8 @@
 
 This repository contains the optimized firmware for the **MKS DLC32 V2.1** board, configured for **CoreXY** kinematics (such as hot-wire CNC foam cutters or laser systems).
 
----
+> 🌍 **Universal Compatibility:** Although this automation was originally developed and tested for **CostyCNC** foam cutters, this firmware is **100% universal**. It works perfectly on **ANY CNC router, laser engraver, or CoreXY machine** in the world, as long as it uses the standard **MKS DLC32 V2.1** mainboard.
+
 
 ## 📖 The Story Behind This Project (How It All Began)
 
