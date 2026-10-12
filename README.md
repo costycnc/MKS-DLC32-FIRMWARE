@@ -26,7 +26,48 @@ Our first instinct was to use a classic hardware approach: wiring a physical but
 2. **The EXP2 Header Failure (GPIO 26):** We tried shifting to the touchscreen controller pins, but encountered identical pin-sharing locks from the core system.
 3. **The Z-Limit Attempt (GPIO 34):** While electrically isolated and pulled high by the onboard 10kΩ hardware resistor, the microsecond loop speed of the ESP32 chip made mechanical button debouncing unreliable without complex external hardware filtering.
 
-### 💡 The Eureka Moment (The Software Solution)
+## 🛠️ System Architecture & Core Logic
+
+Every universal open-source modification comes from a real-world manufacturing necessity. This project started with a clear production goal: creating a completely standalone machine workflow where a cycle could start instantly **just by inserting the MicroSD card**, without requiring a tethered computer, a Wi-Fi client connection, or manual interface interactions.
+
+### ❌ Hardware Pin Constraints (Failed Implementations)
+Our initial development path attempted a classic hardware-triggered approach by wiring a physical macro button directly to different GPIO headers on the board:
+1. **EXP1 Header (GPIO 25 Control):** We mapped the physical pinout and wired a button to GPIO 25. It failed due to deep software conflicts. Even with the panel disconnected, the proprietary background graphics libraries (`display_init()` / `MKS_LVGL`) constantly reconfigured the pin state, leading to floating signals and infinite ghost-trigger loops that flooded the serial buffer.
+2. **EXP2 Header (GPIO 26 Control):** Shifting to the touchscreen SPI controller lines encountered identical resource locks from the core display system task.
+3. **Z-Limit Connector (GPIO 34 Control):** While electrically isolated and tied to an onboard 10kΩ hardware pull-up, the microsecond loop cycle of the ESP32 made mechanical button debouncing unreliable without external analog RC filters.
+
+### 💻 Non-Blocking Software Automation (Final Implementation)
+To bypass all hardware constraints, EMI noise, and pin-sharing conflicts, we refactored the logic to let the core framework handle the automation natively through the MicroSD slot itself. Since the board already monitors the card's electrical mounting states via internal variables, we tapped directly into that software routine. 
+
+By combining a non-blocking 3-second scheduler with a filesystem validation step, the machine safely triggers the job streaming cycle purely through card detection. No extra wires, no electrical noise—just pure software efficiency.
+
+### ⚠️ The "\$esp145" Dynamic Parameter Experiment (The Over-Engineering Trap)
+
+After successfully locking down the hardcoded automated routine, we tried to take the firmware to a professional commercial grade. The new goal was to create a native, customizable GRBL string parameter called **`$esp145`**. 
+
+The concept was brilliant on paper:
+- Typing `$esp145=myfile.nc` via the serial prompt would save the file target permanently into the ESP32's non-volatile storage (NVS).
+- Typing `$esp145=` (blank) would instantly deactivate the entire automation loop, restoring stock factory behavior without needing a re-flash.
+
+#### 🔧 Everything we implemented to build `$esp145`:
+1. **Global Declaration:** We injected `StringSetting* esp_auto_file;` in the core architecture of `Grbl_Esp32/src/Settings.cpp` to allocate a dedicated chunk of RAM for the string.
+2. **NVS Database Hook:** We wrote a custom static initializer `EspAutoFileInit` in the global scope to map `$esp145` directly into GRBL's core parser, inheriting native properties like automated EEPROM/NVS flash saves (`nvs_set_str`) and prompt visibility (`$$` listing).
+3. **Bridge linking:** We introduced `extern StringSetting* esp_auto_file;` at the top of `Grbl_Esp32/src/Protocol.cpp` to create a memory bridge between the independent settings module and the main movement loop.
+4. **Dynamic String Traversal:** We modified the infinite execution loop `for(;;)` to dynamically retrieve the raw text buffer using `esp_auto_file->get()`, validating empty array delimiters (`target_file != '\0'`) and formatting variables inside safe RAM heap arrays (`snprintf`).
+
+#### ❌ Why it failed and why we ultimately abandoned it:
+Despite the code structure being accurate, we hit severe roadblocks deep within the **C++ static initialization ordering**:
+- **Scope Visibility Triggers:** The compiler triggered errors because standard internal system macros like `GRBL_STRING` and `AMIN` change permissions and namespaces across separate modules in this specific Makerbase firmware fork, breaking standard data bindings.
+- **The Boot Loop Hazard:** Because `StringSetting` initializes heavily on startup, forcing a custom instance outside the native network loop risked hitting the *Static Initialization Order Fiasco*. This meant `Protocol.cpp` would occasionally read an uninitialized `NULL` pointer at boot, causing immediate hard system crashes before the step generators could even warm up.
+
+#### 🛑 The Unfinished Tasks & The Final Verdict:
+To make `$esp145` fully production-ready, we still had to:
+- Modify `WebSettings.cpp` to prevent conflicts with other background network protocols.
+- Inject a brand new filtering layer inside the touchscreen source tree (`src/mks/MKS_updata.cpp`) because the display currently discards any incoming serial configurations that do not match its four hardcoded network bounds (`[ESP100]`, `[ESP101]`, `[ESP110]`, `[ESP131]`).
+
+At this point, **we realized we were over-complicating a beautiful, working solution.** The scope of the project was stretching out indefinitely, adding bloated layers of software complexity to a machine that just needs to cut material reliably. 
+
+**We decided to stop fighting the framework and abandoned the dynamic parameter.** By stripping down the structural overhead and reverting back to the lean, original hardcoded routine targeting `/costycnc.nc`, we regained 100% compilation safety, zero boot overhead, and an ultra-fluid movement engine. The mode passed, but the raw efficiency of the bits won!
 Faced with endless electrical noise and pin conflicts, we stopped fighting the hardware and asked a different question: *Why add extra buttons when the board already has a perfectly engineered sensor built-in?* **The MicroSD card slot.**
 
 Instead of chasing phantom signals on display pins, we decided to track the physical mounting status of the SD card. By combining a non-blocking timer with a direct check on the filesystem, we created a seamless automation: you slide the card in, the machine silently verifies it, and the motors start moving. No wires, no interference, pure software elegance.
