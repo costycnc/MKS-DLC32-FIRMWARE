@@ -157,27 +157,29 @@ void protocol_main_loop() {
 
 
       
-        // --- RILEVAZIONE INSERIMENTO SD SICURA E LEGGERA ---
-        static bool last_sd_inserted = false;
+        // --- AVVIO AUTOMATICO INTELLIGENTE (1 CONTROLLO AL SECONDO) ---
+        static bool last_sd_ready = false;
         static uint32_t last_sd_check_time = 0;
 
-        // Il controllo hardware avviene SOLO una volta ogni 1000 millisecondi (1 secondo)
+        // Il processore valuta la memoria solo una volta ogni 1000ms (1 secondo)
         if (millis() - last_sd_check_time >= 1000) {
-            last_sd_check_time = millis(); // Aggiorna il tempo istantaneamente
+            last_sd_check_time = millis(); // Aggiorna il cronometro istantaneamente
 
-            // Interroghiamo l'hardware della SD solo adesso
-            bool current_sd_inserted = (SD.cardType() != CARD_NONE);
+            // Leggiamo la variabile RAM di Makerbase in totale sicurezza
+            bool current_sd_ready = sd_mounter; 
 
-            // Se la scheda viene inserita in questo momento
-            if (current_sd_inserted && !last_sd_inserted) {
-                grbl_send(CLIENT_ALL, "[MSG:Scheda SD inserita correttamente!]\r\n");
-                MKS_GRBL_CMD_SEND("$X\n"); 
+            // Se la scheda è stata appena riconosciuta dal sistema
+            if (current_sd_ready && !last_sd_ready) {
+                grbl_send(CLIENT_ALL, "[MSG:Scheda SD rilevata dal sistema MKS! Avvio...]\r\n");
+                
+                // Invia il comando ufficiale alla coda di GRBL
+                MKS_GRBL_CMD_SEND("$SD/Run=costycnc.nc\n");
             }
 
-            // Memorizziamo lo stato
-            last_sd_inserted = current_sd_inserted;
+            // Memorizziamo lo stato per il secondo successivo
+            last_sd_ready = current_sd_ready;
         }
-        // --- FINE RILEVAZIONE ---
+        // --- FINE AVVIO AUTOMATICO ---
 
       
 #if 1
