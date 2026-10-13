@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CostyCNC - Portale Aggiornamento Cloud MKS-DLC32</title>
+    <title>CostyCNC - MKS-DLC32 Cloud Update Portal</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #f4f6f9; color: #333; line-height: 1.6; text-align: center; }
         .container { max-width: 650px; margin: auto; background: white; padding: 35px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
@@ -15,7 +15,7 @@
         #status { margin-top: 25px; font-weight: bold; color: #007bff; min-height: 40px; border-top: 2px dashed #eee; padding-top: 20px; text-align: center; font-size: 15px; }
         .selected-info-box { background: #e7f3ff; border: 1px solid #b8daff; color: #004085; padding: 18px; border-radius: 6px; text-align: left; margin-bottom: 20px; font-size: 15px; }
         
-        /* STILI DEL TUTORIAL SOTTOSTANTE */
+        /* TUTORIAL STYLES BELOW */
         .tutorial-section { max-width: 650px; margin: 30px auto auto auto; background: white; padding: 35px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-align: left; }
         .tutorial-section h3 { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 8px; margin-top: 0; }
         .file-card { background: #f8f9fa; border-left: 4px solid #007bff; padding: 15px; margin-bottom: 15px; border-radius: 0 6px 6px 0; }
@@ -24,93 +24,93 @@
         ol { padding-left: 20px; }
         li { margin-bottom: 10px; }
 
-        /* PROMEMORIA PARAMETRI VISIBILE IN FONDO ALLA PAGINA */
+        /* PARAMETER REMINDER VISIBLE AT BOTTOM OF PAGE */
         .admin-footer { max-width: 650px; margin: 20px auto 0 auto; background: #e9ecef; border: 1px solid #ced4da; padding: 15px; border-radius: 8px; text-align: left; font-family: monospace; font-size: 14px; color: #495057; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>Aggiornamento Cloud Firmware MKS-DLC32</h2>
-    <p style="color: #666;">Strumento ufficiale di ripristino da browser per macchine CostyCNC.</p>
+    <h2>MKS-DLC32 Firmware Cloud Update</h2>
+    <p style="color: #666;">Official browser-based restore tool for CostyCNC machines.</p>
     
-    <!-- BOX INFORMATIVO CHE COMPARIRA' CON IL LINK RAPIDO -->
+    <!-- INFO BOX THAT APPEARS WITH QUICK LINK -->
     <div id="selectedInfoBox" class="selected-info-box" style="display: none;">
-        📌 <strong>Configurazione selezionata per la tua macchina:</strong><br>
+        📌 <strong>Configuration selected for your machine:</strong><br>
         <span id="selectedOptionText" style="display:block; margin-top: 5px; font-weight: normal; color: #333;"></span>
     </div>
 
-    <!-- BLOCCO SELEZIONE (Verrà nascosto se c'è un parametro ?opzione= nell'URL) -->
+    <!-- SELECTION BLOCK (Will be hidden if there is a ?option= parameter in the URL) -->
     <div class="form-group" id="selectionGroup">
-        <label for="firmwareSelect">Seleziona cosa vuoi installare sulla scheda:</label>
+        <label for="firmwareSelect">Select what you want to install on the board:</label>
         <select id="firmwareSelect">
-            <option value="1000-nema.bin" data-addr="0x1000">1. Ripristino firmware di default (Le eventuali modifiche custom saranno rimosse)</option>
-            <option value="sd-autorun.bin" data-addr="0x10000">2. Solo parte codice con aggiunta autorun SD (Le impostazioni personalizzate rimangono)</option>
-            <option value="dump-totale.bin" data-addr="0x10000">3. Solo parte codice default senza autorun SD (Le impostazioni personalizzate rimangono)</option>
+            <option value="1000-nema.bin" data-addr="0x1000">1. Restore default firmware (Any custom modifications will be removed)</option>
+            <option value="sd-autorun.bin" data-addr="0x10000">2. Code portion only with SD autorun added (Your custom settings remain)</option>
+            <option value="dump-totale.bin" data-addr="0x10000">3. Default code portion only without SD autorun (Your custom settings remain)</option>
         </select>
     </div>
 
-    <button id="flashBtn">🚀 Avvia Scaricamento e Aggiornamento Cloud</button>
+    <button id="flashBtn">🚀 Start Cloud Download and Update</button>
     
-    <div id="status">Stato: In attesa di connessione seriale...</div>
+    <div id="status">Status: Waiting for serial connection...</div>
 </div>
 
-<!-- SEZIONE DIDATTICA / TUTORIAL -->
+<!-- EDUCATIONAL / TUTORIAL SECTION -->
 <div class="tutorial-section">
-    <h3>📖 Guida e Informazioni Utili</h3>
-    <p>Questo portale invia il software corretto alla tua scheda di controllo in modo del tutto automatico. Ecco come funzionano le tre opzioni disponibili:</p>
+    <h3>📖 Guide and Useful Information</h3>
+    <p>This portal automatically sends the correct software to your control board. Here's how the three available options work:</p>
 
     <div class="file-card">
-        <strong>1. Ripristino firmware di default</strong>
-        <p style="margin: 5px 0 0 0; font-size: 14px; color: #555;">Sarà installato il firmware originale di fabbrica. <em>Nota: eseguendo questa opzione, le eventuali personalizzazioni eseguite sulla scheda verranno ripristinate allo stato iniziale.</em></p>
+        <strong>1. Restore default firmware</strong>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #555;">The original factory firmware will be installed. <em>Note: by running this option, any customizations made on the board will be reset to their initial state.</em></p>
     </div>
 
     <div class="file-card" style="border-left-color: #28a745;">
-        <strong>2. Solo parte codice con aggiunta autorun SD</strong>
-        <p style="margin: 5px 0 0 0; font-size: 14px; color: #555;">Aggiorna solo le funzioni interne attivando la lettura automatica dei file all'avvio da scheda SD. <strong>Tutte le tue impostazioni personalizzate rimangono salvate</strong> (password del Wi-Fi, calibrazione dei passi dei motori e pulsanti macro personalizzati non vengono toccati).</p>
+        <strong>2. Code portion only with SD autorun added</strong>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #555;">Updates only the internal functions by enabling automatic file reading from the SD card at startup. <strong>All your custom settings remain saved</strong> (Wi-Fi password, motor step calibration, and custom macro buttons are not touched).</p>
     </div>
 
     <div class="file-card" style="border-left-color: #ffc107;">
-        <strong>3. Solo parte codice default senza autorun SD</strong>
-        <p style="margin: 5px 0 0 0; font-size: 14px; color: #555;">Installa il programma standard eliminando il controllo automatico della scheda SD all'avvio. La macchina si accende normalmente. Anche in questo caso le tue impostazioni utente, password e calibrazioni rimangono perfettamente intatte.</p>
+        <strong>3. Default code portion only without SD autorun</strong>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #555;">Installs the standard program by removing the automatic SD card check at startup. The machine turns on normally. Even in this case, your user settings, password, and calibrations remain perfectly intact.</p>
     </div>
 
-    <h4>🛠️ Come procedere all'installazione:</h4>
+    <h4>🛠️ How to proceed with the installation:</h4>
     <ol>
-        <li>Collega la scheda MKS-DLC32 al computer usando un comune cavo USB.</li>
-        <li>Clicca sul pulsante verde <strong>"Avvia Scaricamento e Aggiornamento Cloud"</strong> in alto.</li>
-        <li>Il tuo browser (Chrome o Edge) aprirà una finestrella: seleziona la porta di connessione della tua macchina (es. <code>COM3</code> o <code>Dispositivo Seriale</code>) e premi Connetti.</li>
-        <li>Attendi che la procedura arrivi al 100% e poi spegni e riaccendi la scheda.</li>
+        <li>Connect the MKS-DLC32 board to the computer using a common USB cable.</li>
+        <li>Click the green button <strong>"Start Cloud Download and Update"</strong> above.</li>
+        <li>Your browser (Chrome or Edge) will open a small window: select the connection port of your machine (e.g. <code>COM3</code> or <code>Serial Device</code>) and press Connect.</li>
+        <li>Wait for the procedure to reach 100% and then turn the board off and back on.</li>
     </ol>
 
     <div class="alert-box">
-        ℹ️ <strong>Requisiti di sicurezza:</strong> Questo sistema sicuro funziona direttamente dal browser, ma richiede tassativamente che tu stia navigando su questo sito web protetto in modalità <strong>HTTPS</strong>.
+        ℹ️ <strong>Security requirements:</strong> This secure system works directly from the browser, but it strictly requires that you are browsing this website in <strong>HTTPS</strong> mode.
     </div>
 </div>
-<!-- INIZIO CODICE LOGICO ED INTERFACCIA HARDWARE USB -->
+<!-- START OF LOGIC CODE AND USB HARDWARE INTERFACE -->
 <script type="module">
 
 const urlParams = new URLSearchParams(window.location.search);
-const opzioneParam = urlParams.get('opzione'); 
+const optionParam = urlParams.get('option'); 
 const firmwareSelect = document.getElementById('firmwareSelect');
 const selectionGroup = document.getElementById('selectionGroup');
 const selectedInfoBox = document.getElementById('selectedInfoBox');
 const selectedOptionText = document.getElementById('selectedOptionText');
 
-if (opzioneParam === '1' || opzioneParam === '2' || opzioneParam === '3') {
-    const targetIndex = parseInt(opzioneParam) - 1;
+if (optionParam === '1' || optionParam === '2' || optionParam === '3') {
+    const targetIndex = parseInt(optionParam) - 1;
     
     firmwareSelect.selectedIndex = targetIndex;
     selectionGroup.style.display = 'none';
     selectedInfoBox.style.display = 'block';
     
-    // I messaggi automatici sotto sono stati riscritti per essere rassicuranti e senza allarmismi
-    if (opzioneParam === '1') {
-        selectedOptionText.innerHTML = "<strong>Ripristino firmware di default</strong><br><span style='color:#e67e22;'>ℹ Sarà installato il firmware originale di fabbrica. Le eventuali modifiche custom saranno ripristinate.</span>";
-    } else if (opzioneParam === '2') {
-        selectedOptionText.innerHTML = "<strong>Aggiornamento con Autorun da SD</strong><br><span style='color:#28a745;'>✔ Sicuro: Password Wi-Fi, calibrazioni passi motore e macro personalizzate rimarranno salvate.</span>";
-    } else if (opzioneParam === '3') {
-        selectedOptionText.innerHTML = "<strong>Firmware standard (Senza Autorun SD)</strong><br><span style='color:#28a745;'>✔ Sicuro: Le tue impostazioni personali, password Wi-Fi e calibrazioni rimarranno perfettamente salvate.</span>";
+    // The automatic messages below have been rewritten to be reassuring and alarm-free
+    if (optionParam === '1') {
+        selectedOptionText.innerHTML = "<strong>Restore default firmware</strong><br><span style='color:#e67e22;'>ℹ The original factory firmware will be installed. Any custom modifications will be reset.</span>";
+    } else if (optionParam === '2') {
+        selectedOptionText.innerHTML = "<strong>Update with SD Autorun</strong><br><span style='color:#28a745;'>✔ Safe: Wi-Fi password, motor step calibrations, and custom macros will remain saved.</span>";
+    } else if (optionParam === '3') {
+        selectedOptionText.innerHTML = "<strong>Standard firmware (Without SD Autorun)</strong><br><span style='color:#28a745;'>✔ Safe: Your personal settings, Wi-Fi password, and calibrations will remain perfectly saved.</span>";
     }
 }
 
@@ -122,7 +122,7 @@ document.getElementById('flashBtn').addEventListener('click', async () => {
     const selectedAddressStr = selectedOption.getAttribute('data-addr');
     const targetAddress = parseInt(selectedAddressStr, 16);
 
-    statusDiv.innerText = "Stato: Apertura della connessione con la macchina...";
+    statusDiv.innerText = "Status: Opening connection with the machine...";
 
     try {
         const esptool = await import("./esptool-bundle.js");
@@ -136,24 +136,24 @@ document.getElementById('flashBtn').addEventListener('click', async () => {
             baudrate: 921600,
             terminal: {
                 clean: () => {},
-                writeLine: (msg) => { console.log(msg); statusDiv.innerText = "Progresso: " + msg; },
+                writeLine: (msg) => { console.log(msg); statusDiv.innerText = "Progress: " + msg; },
                 write: (msg) => {}
             }
         });
 
         await esploader.main();
 
-        statusDiv.innerText = "Stato: Ricezione del software dal server CostyCNC...";
+        statusDiv.innerText = "Status: Receiving software from CostyCNC server...";
         
         const response = await fetch(selectedFileUrl);
         if (!response.ok) {
-            throw new Error(`Impossibile ricevere il file (Errore server: ${response.status})`);
+            throw new Error(`Unable to receive file (Server error: ${response.status})`);
         }
         
         const arrayBuffer = await response.arrayBuffer();
         const buffer = new Uint8Array(arrayBuffer);
 
-        statusDiv.innerText = "Stato: Scrittura in corso sulla scheda di controllo...";
+        statusDiv.innerText = "Status: Writing to the control board...";
 
         const flashOptions = {
             fileArray: [{ data: buffer, address: targetAddress }], 
@@ -164,22 +164,22 @@ document.getElementById('flashBtn').addEventListener('click', async () => {
 
         await esploader.writeFlash(flashOptions);
         
-        statusDiv.innerText = "✅ Aggiornamento completato con successo! Puoi riavviare la macchina.";
+        statusDiv.innerText = "✅ Update completed successfully! You can restart the machine.";
         await transport.disconnect();
 
     } catch (err) {
         console.error(err);
-        statusDiv.innerText = "❌ Si è verificato un problema: " + err.message;
+        statusDiv.innerText = "❌ A problem occurred: " + err.message;
     }
 });
 </script>
 
-<!-- BLOCCO PROMEMORIA PARAMETRI REALI DIRETTAMENTE VISIBILE SULLA PAGINA -->
+<!-- REAL PARAMETER REMINDER BLOCK DIRECTLY VISIBLE ON THE PAGE -->
 <div class="admin-footer">
-    <strong>📌 Riferimento Rapido Parametri di Configurazione (Link Veloci):</strong><br>
-    - Opzione 1 (Base):    ?opzione=1<br>
-    - Opzione 2 (Autorun): ?opzione=2<br>
-    - Opzione 3 (Default): ?opzione=3
+    <strong>📌 Quick Reference Configuration Parameters (Quick Links):</strong><br>
+    - Option 1 (Base):    ?option=1<br>
+    - Option 2 (Autorun): ?option=2<br>
+    - Option 3 (Default): ?option=3
 </div>
 
 </body>
