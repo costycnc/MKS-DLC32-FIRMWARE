@@ -196,12 +196,12 @@ void protocol_main_loop() {
                 #endif
             }
 
-                // Per essere sicuri al 100% che la scheda sia stata SCONNESSA davvero 
-                // e non sia solo un falso contatto di chiusura file, possiamo verificare lo stato nativo
-                if (get_sd_state(false) == SDState::NotPresent || get_sd_state(false) == SDState::NotReady) {
-                    file_already_started = false; // Reset completato: la macchina è pronta per la prossima SD
-                    grbl_send(CLIENT_ALL, "[MSG:Scheda SD rimossa fisicamente! Sistema pronto per il prossimo inserimento.]\r\n");
-                }
+            // Se la scheda SD viene rimossa, resettiamo il flag e liberiamo il sistema
+            if (!current_sd_ready && file_already_started && sys.state == State::Idle) {
+                file_already_started = false; // SD rimossa, reset completato con successo
+                grbl_send(CLIENT_ALL, "[MSG:Scheda SD rimossa! Sistema pronto per il prossimo inserimento.]\r\n");
+            }
+
         }
         // --- FINE AVVIO AUTOMATICO DA INSERIMENTO SD CON VERIFICA FILE ---
 
