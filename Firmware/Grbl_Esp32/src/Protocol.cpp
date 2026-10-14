@@ -157,7 +157,7 @@ void protocol_main_loop() {
 
       
               // --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD CON VERIFICA FILE ---
-        static bool file_already_started = false;
+        static bool file_already_started = true;
         static uint32_t last_sd_check_time = 0;
 
         // Eseguiamo il controllo reale ogni 3 secondi (3000 ms)
