@@ -7,6 +7,7 @@ FakeSetting<int>* number_axis;
 StringSetting* startup_line_0;
 StringSetting* startup_line_1;
 StringSetting* build_info;
+StringSetting* sd_autorun_filename;
 
 IntSetting* pulse_microseconds;
 IntSetting* stepper_idle_lock_time;
@@ -250,6 +251,7 @@ static bool checkAutoRunFile(char* value) {
     // Verifica base: non vuoto, lunghezza ragionevole
     return strlen(value) > 0 && strlen(value) < 64;
 }
+
 void make_settings() {
     Setting::init();
 
