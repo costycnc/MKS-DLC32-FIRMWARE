@@ -208,14 +208,13 @@ for (;;) {
             #endif
         }
 
-        // Se la scheda SD viene rimossa, resettiamo il flag
-        if (!current_sd_ready && file_already_started && sys.state == State::Idle) {
-            file_already_started = false;
-          // Reset spindle: basta questo per evitare il loop S0/M03
-        gc_state.modal.spindle = SpindleState::Disable;
-        gc_state.spindle_speed = 0;
-            grbl_send(CLIENT_ALL, "[MSG:Scheda SD rimossa! Sistema pronto per il prossimo inserimento.]\r\n");
-        }
+if (!current_sd_ready && file_already_started && sys.state == State::Idle) {
+    file_already_started = false;
+
+    spindle->stop();
+
+    grbl_send(CLIENT_ALL, "[MSG:Scheda SD rimossa! Sistema pronto per il prossimo inserimento.]\r\n");
+}
 
     }
     // --- FINE AVVIO AUTOMATICO DA INSERIMENTO SD CON VERIFICA FILE ---
