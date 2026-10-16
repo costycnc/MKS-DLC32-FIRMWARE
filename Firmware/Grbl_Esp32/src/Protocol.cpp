@@ -150,7 +150,7 @@ void protocol_main_loop() {
       first_restart = false; 
     }
     
-   int c;
+ int c;
 bool is_need_next = false;
 for (;;) {
 
@@ -164,34 +164,48 @@ for (;;) {
 
         bool current_sd_ready = (get_sd_state(true) == SDState::Idle);
 
-        // Leggi il nome file dal parametro $AUTORUN
-        const char* autorun_file = sd_autorun_filename->get();
-
-        // Se il nome è vuoto, autorun disattivato — non fare nulla
-        if (strlen(autorun_file) == 0) {
-            // Autorun disattivato, nessuna azione
-        }
-        else if (sys.state == State::Idle && current_sd_ready && !file_already_started) {
+        // Se la macchina è in Idle, la SD è pronta e il taglio non è ancora partito
+        if (sys.state == State::Idle && current_sd_ready && !file_already_started) {
             #ifdef ENABLE_SD_CARD
 
-            // Costruisci il percorso completo con "/"
-            String fullPath = "/" + String(autorun_file);
-            File testFile = SD.open(fullPath.c_str(), "r");
+            String foundFile = "";
 
-            if (testFile) {
-                testFile.close();
+            // Scansiona la root della SD cercando il primo file "!*.nc"
+            File root = SD.open("/");
+            if (root) {
+                File entry = root.openNextFile();
+                while (entry) {
+                    if (!entry.isDirectory()) {
+                        String name = entry.name();
+                        // Rimuovi eventuale "/" iniziale
+                        if (name.startsWith("/")) name = name.substring(1);
 
-                grbl_send(CLIENT_ALL, "[MSG:Scheda SD pronta e file trovato! Avvio taglio...]\r\n");
-
-                // Costruisci il comando dinamicamente
-                String runCmd = "$SD/Run=" + String(autorun_file) + "\n";
-                MKS_GRBL_CMD_SEND(runCmd.c_str());
-
-                file_already_started = true;
-            } else {
-                grbl_send(CLIENT_ALL, "[MSG:Errore: Scheda inserita ma file NON presente. Abbandono!]\r\n");
-                file_already_started = true;
+                        // Condizione: inizia con '!' E finisce con '.nc' (case-insensitive)
+                        if (name.startsWith("!") &&
+                            name.length() > 4 &&
+                            (name.endsWith(".nc") || name.endsWith(".NC"))) {
+                            foundFile = name;
+                            entry.close();
+                            break;   // ← PRIMO trovato, poi stop
+                        }
+                    }
+                    entry.close();
+                    entry = root.openNextFile();
+                }
+                root.close();
             }
+
+            if (foundFile.length() > 0) {
+                grbl_sendf(CLIENT_ALL, "[MSG:Trovato: %s - Avvio taglio...]\r\n", foundFile.c_str());
+
+                String runCmd = "$SD/Run=" + foundFile + "\n";
+                MKS_GRBL_CMD_SEND(runCmd.c_str());
+            } else {
+                grbl_send(CLIENT_ALL, "[MSG:Nessun file !*.nc trovato sulla SD]\r\n");
+            }
+
+            // In ogni caso blocca: un solo tentativo per inserimento
+            file_already_started = true;
             #endif
         }
 
