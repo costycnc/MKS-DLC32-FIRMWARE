@@ -244,6 +244,12 @@ void make_coordinate(CoordIndex index, const char* name) {
         coords[index]->setDefault();
     }
 }
+
+// Puoi copiare la logica di checkStartupLine, oppure scrivere una validazione più semplice
+static bool checkAutoRunFile(char* value) {
+    // Verifica base: non vuoto, lunghezza ragionevole
+    return strlen(value) > 0 && strlen(value) < 64;
+}
 void make_settings() {
     Setting::init();
 
@@ -371,6 +377,7 @@ void make_settings() {
     // GRBL Non-numbered settings
     startup_line_0 = new StringSetting(EXTENDED, WG, "N0", "GCode/Line0", "", checkStartupLine);
     startup_line_1 = new StringSetting(EXTENDED, WG, "N1", "GCode/Line1", "", checkStartupLine);
+    sd_autorun_filename = new StringSetting(EXTENDED, WG, "AUTORUN", "SD/AutoRunFile", "costycnc.nc", checkAutoRunFile);
 
     // GRBL Numbered Settings
     laser_mode       = new FlagSetting(GRBL, WG, "32", "GCode/LaserMode", DEFAULT_LASER_MODE);
