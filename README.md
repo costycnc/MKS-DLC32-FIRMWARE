@@ -61,6 +61,78 @@ At this point, **we realized we were over-complicating a beautiful, working solu
 
 **We decided to stop fighting the framework and abandoned the dynamic parameter.** By stripping down the structural overhead and reverting back to the lean, original hardcoded routine targeting `/costycnc.nc`, we regained 100% compilation safety, zero boot overhead, and an ultra-fluid movement engine. The mode passed, but the raw efficiency of the bits won!
 
+## 🔄 From Complexity to Simplicity: The Autorun Evolution
+
+After abandoning `$esp145`, we tried other paths to make 
+the autorun filename customizable.
+
+### Attempt 1: `$AUTORUN` as a String Parameter
+
+We added a `StringSetting` called `$AUTORUN`:
+- `$AUTORUN=costycnc.nc` → sets the filename
+- `$AUTORUN` → shows the current value
+- `$AUTORUN=` → disables autorun
+
+**It worked**, but required the customer to:
+- Have a PC connected to the CNC
+- Know serial commands
+- Remember the `$AUTORUN=nome.nc` syntax
+
+Too much complexity for a customer who just wants to cut.
+
+### Attempt 2: `$AUTORUN` as an On/Off Flag
+
+We simplified to a `FlagSetting`:
+- `$AUTORUN=1` → enable autorun
+- `$AUTORUN=0` → disable
+
+But it still required configuration. And the filename had to 
+be read from somewhere anyway.
+
+### Attempt 3: `!` Prefix on the File
+
+The idea: the customer renames `sedia.nc` to `!sedia.nc`, the 
+CNC finds the first `!*.nc` file and runs it.
+
+**It didn't work**: the Grbl_Esp32 parser filters special 
+characters (`!`, `?`, etc.) inside `$SD/Run` commands, so the 
+command was never processed.
+
+### Final Solution: `-` Prefix on the File
+
+We switched the prefix to `-`:
+- `-sedia.nc` → executed
+- `sedia.nc` → ignored
+- `-tavolo.nc` → executed (if `-sedia.nc` is absent)
+
+**It works perfectly**:
+- ✅ Zero parameters to configure
+- ✅ Zero serial commands
+- ✅ Zero PC connection required
+- ✅ `-` is legal on FAT32, Windows, Mac, Linux
+- ✅ Single keystroke on the keyboard (easy even for non-experts)
+- ✅ Visible in any file manager
+
+### The Lesson
+
+We spent days implementing parameters, `StringSetting`, 
+`FlagSetting`, NVS storage, resets, touchscreen filters... 
+only to discover that **a simple `-` in front of the filename 
+solves everything in 3 lines of code**.
+
+**Simplicity wins. Always.**
+
+### How To Use
+
+1. Rename the file you want to cut by adding `-` at the beginning
+   Example: `sedia.nc` → `-sedia.nc`
+2. Insert the SD card into the CNC
+3. The CNC automatically runs the first `-*.nc` file it finds
+4. To change jobs: remove the SD, move the `-` 
+   to another file, reinsert
+
+No configuration. No commands. Just the `-`.
+
 ### 🐛 The G-Code Modal Loop Bug: The Hidden Trap of `S0` and `M03`
 
 During testing, we discovered a highly unusual software loop bug triggered by specific G-Code endings. In hot-wire foam cutting, it is common practice **NOT to send `M05` (Spindle Off) immediately** at the end of the toolpath. If the wire turns cold instantly while still inside the foam block during the homing routine, the shrinking material will trap and snap the wire. Keeping the path modally "active" but dropping the heat down via software ensures a clean exit.
