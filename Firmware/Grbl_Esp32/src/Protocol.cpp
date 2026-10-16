@@ -154,7 +154,7 @@ void protocol_main_loop() {
 bool is_need_next = false;
 for (;;) {
 
-    // --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD CON VERIFICA FILE ---
+// --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD CON VERIFICA FILE ---
     static bool file_already_started = true;
     static uint32_t last_sd_check_time = 0;
 
@@ -208,11 +208,16 @@ for (;;) {
             #endif
         }
 
-if (!current_sd_ready && file_already_started && sys.state == State::Idle) {
-    file_already_started = false;
+        // --- BLOCCO DI RESET (con fix Busy) ---
+        // Se la SD è presente (Busy o Idle), non resettare
+        bool sd_present = (get_sd_state(true) == SDState::Idle || 
+                           get_sd_state(true) == SDState::Busy);
 
-    grbl_send(CLIENT_ALL, "[MSG:Scheda SD rimossa! Sistema pronto per il prossimo inserimento.]\r\n");
-}
+        if (!sd_present && file_already_started && sys.state == State::Idle) {
+            file_already_started = false;
+            grbl_send(CLIENT_ALL, "[MSG:Scheda SD rimossa! Sistema pronto per il prossimo inserimento.]\r\n");
+        }
+        // --- FINE BLOCCO DI RESET ---
 
     }
     // --- FINE AVVIO AUTOMATICO DA INSERIMENTO SD CON VERIFICA FILE ---
