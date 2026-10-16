@@ -11,8 +11,7 @@ extern AxisSettings* a_axis_settings;
 extern AxisSettings* b_axis_settings;
 extern AxisSettings* c_axis_settings;
 extern AxisSettings* axis_settings[];
-// Aggiungi nel file, insieme ad altre variabili StringSetting
-extern StringSetting* sd_autorun_filename;
+
 extern StringSetting* startup_line_0;
 extern StringSetting* startup_line_1;
 extern StringSetting* build_info;
