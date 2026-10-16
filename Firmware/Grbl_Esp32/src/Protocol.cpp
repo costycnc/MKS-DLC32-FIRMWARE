@@ -170,7 +170,7 @@ for (;;) {
 
             String foundFile = "";
 
-            // Scansiona la root della SD cercando il primo file "!*.nc"
+            // Scansiona la root della SD cercando il primo file "-*.nc"
             File root = SD.open("/");
             if (root) {
                 File entry = root.openNextFile();
@@ -180,14 +180,13 @@ for (;;) {
                         // Rimuovi eventuale "/" iniziale
                         if (name.startsWith("/")) name = name.substring(1);
 
-                        // Condizione: inizia con '!' E finisce con '.nc' (case-insensitive)
-                        if (name.startsWith("!") &&
-                            name.length() > 4 &&
-                            (name.endsWith(".nc") || name.endsWith(".NC"))) {
-                            foundFile = name;
-                            entry.close();
-                            break;   // ← PRIMO trovato, poi stop
-                        }
+                      // Condizione: inizia con '-' E finisce con '.nc' (case-insensitive)
+                      if (name.startsWith("-") &&
+                          (name.endsWith(".nc") || name.endsWith(".NC"))) {
+                          foundFile = name;
+                          entry.close();
+                          break;   // ← PRIMO trovato, poi stop
+                      }
                     }
                     entry.close();
                     entry = root.openNextFile();
