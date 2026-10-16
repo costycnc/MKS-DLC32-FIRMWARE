@@ -211,8 +211,6 @@ for (;;) {
 if (!current_sd_ready && file_already_started && sys.state == State::Idle) {
     file_already_started = false;
 
-    spindle->stop();
-
     grbl_send(CLIENT_ALL, "[MSG:Scheda SD rimossa! Sistema pronto per il prossimo inserimento.]\r\n");
 }
 
