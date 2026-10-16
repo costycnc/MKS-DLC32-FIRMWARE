@@ -150,66 +150,60 @@ void protocol_main_loop() {
       first_restart = false; 
     }
     
-    int c;
-    bool is_need_next = false;
-    for (;;) {
+   int c;
+bool is_need_next = false;
+for (;;) {
 
+    // --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD CON VERIFICA FILE ---
+    static bool file_already_started = true;
+    static uint32_t last_sd_check_time = 0;
 
-      
-              // --- INIZIO AVVIO AUTOMATICO DA INSERIMENTO SD CON VERIFICA FILE ---
-        static bool file_already_started = true;
-        static uint32_t last_sd_check_time = 0;
+    // Eseguiamo il controllo reale ogni 3 secondi (3000 ms)
+    if (millis() - last_sd_check_time >= 3000) {
+        last_sd_check_time = millis();
 
-        // Eseguiamo il controllo reale ogni 3 secondi (3000 ms)
-        if (millis() - last_sd_check_time >= 3000) {
-            last_sd_check_time = millis(); // Aggiorna il cronometro istantaneamente
+        bool current_sd_ready = (get_sd_state(true) == SDState::Idle);
 
-            // Interroghiamo elettricamente i pin dello slot per verificare lo stato reale
-            bool current_sd_ready = (get_sd_state(true) == SDState::Idle);
+        // Leggi il nome file dal parametro $AUTORUN
+        const char* autorun_file = sd_autorun_filename->get();
 
-            // Se la macchina è in Idle, la SD è pronta e il taglio non è ancora partito
-            if (sys.state == State::Idle && current_sd_ready && !file_already_started) {
-                #ifdef ENABLE_SD_CARD
-                
-                // --- STRATEGIA DI VERIFICA PRESENZA FILE ---
-                // Proviamo ad aprire direttamente il file per essere sicuri che esista
-                File testFile = SD.open("/costycnc.nc", "r");
-                
-                if (testFile) {
-                    // Il file esiste! Lo chiudiamo subito per liberare la memoria
-                    testFile.close();
-                    
-                    grbl_send(CLIENT_ALL, "[MSG:Scheda SD pronta e file /costycnc.nc trovato! Avvio taglio...]\r\n");
-                    
-                    // Inviamo il comando ufficiale di riproduzione usando la macro nativa MKS
-                    MKS_GRBL_CMD_SEND("$SD/Run=costycnc.nc\n");
-                    
-                    // Blocchiamo il controllo per evitare ripetizioni
-                    file_already_started = true;
-                } else {
-                    // Se il file NON viene trovato, abbandona l'operazione e avvisa l'utente
-                    grbl_send(CLIENT_ALL, "[MSG:Errore: Scheda inserita ma /costycnc.nc NON presente. Abbandono!]\r\n");
-                    
-                    // Impostiamo a true così non bombarda di messaggi d'errore finché non togli la scheda
-                    file_already_started = true; 
-                }
-                #endif
-            }
-
-            // Se la scheda SD viene rimossa, resettiamo il flag e liberiamo il sistema
-            if (!current_sd_ready && file_already_started && sys.state == State::Idle) {
-                file_already_started = false; // SD rimossa, reset completato con successo
-                grbl_send(CLIENT_ALL, "[MSG:Scheda SD rimossa! Sistema pronto per il prossimo inserimento.]\r\n");
-            }
-
+        // Se il nome è vuoto, autorun disattivato — non fare nulla
+        if (strlen(autorun_file) == 0) {
+            // Autorun disattivato, nessuna azione
         }
-        // --- FINE AVVIO AUTOMATICO DA INSERIMENTO SD CON VERIFICA FILE ---
+        else if (sys.state == State::Idle && current_sd_ready && !file_already_started) {
+            #ifdef ENABLE_SD_CARD
 
+            // Costruisci il percorso completo con "/"
+            String fullPath = "/" + String(autorun_file);
+            File testFile = SD.open(fullPath.c_str(), "r");
 
+            if (testFile) {
+                testFile.close();
 
+                grbl_send(CLIENT_ALL, "[MSG:Scheda SD pronta e file trovato! Avvio taglio...]\r\n");
 
+                // Costruisci il comando dinamicamente
+                String runCmd = "$SD/Run=" + String(autorun_file) + "\n";
+                MKS_GRBL_CMD_SEND(runCmd.c_str());
 
-      
+                file_already_started = true;
+            } else {
+                grbl_send(CLIENT_ALL, "[MSG:Errore: Scheda inserita ma file NON presente. Abbandono!]\r\n");
+                file_already_started = true;
+            }
+            #endif
+        }
+
+        // Se la scheda SD viene rimossa, resettiamo il flag
+        if (!current_sd_ready && file_already_started && sys.state == State::Idle) {
+            file_already_started = false;
+            grbl_send(CLIENT_ALL, "[MSG:Scheda SD rimossa! Sistema pronto per il prossimo inserimento.]\r\n");
+        }
+
+    }
+    // --- FINE AVVIO AUTOMATICO DA INSERIMENTO SD CON VERIFICA FILE ---
+
 #if 1
 #ifdef ENABLE_SD_CARD
         if (SD_ready_next) {
